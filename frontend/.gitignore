@@ -22,3 +22,18 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Build files
+/build
+/dist
+
+# Coverage directory
+/coverage
+
+# Vite
+.vite/
