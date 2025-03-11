@@ -30,6 +30,7 @@ const CampaignList = () => {
             if (!Array.isArray(response.data)) {
                 throw new Error('Invalid response format');
             }
+            console.log(response.data)
             setCampaigns(response.data);
         } catch (error) {
             console.error('Error fetching campaigns:', error);

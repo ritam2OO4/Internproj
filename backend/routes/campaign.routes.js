@@ -30,7 +30,7 @@ router.get('/campaignsList', async (req, res) => {
     if (!req.user) {
       return res.status(401).json({ error: 'User not found' });
     }
-    const campaigns = await Campaign.find({ businessId: req.user._id });
+    const campaigns = await Campaign.find();
     res.json(campaigns);
   } catch (error) {
     console.error('Campaign list error:', error);

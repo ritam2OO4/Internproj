@@ -17,9 +17,12 @@ const PrivateRoute = ({ children }) => {
   if (!isAuthenticated) {
     if (!redirecting) {
       setRedirecting(true);
+      console.log("redirecting")
       setTimeout(() => {
+        console.log("2redirecting")
         return <Navigate to="/" />;
       }, 100);
+        console.log("redirecting")
     }
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
