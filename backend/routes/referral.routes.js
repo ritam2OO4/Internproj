@@ -14,7 +14,7 @@ router.post('/generate/:campaignId', authMiddleware, async (req, res) => {
 
     const campaign = await Campaign.findOne({
       _id: req.params.campaignId,
-      // businessId: req.user._id
+      businessId: req.user._id
     });
 
     if (!campaign) {
