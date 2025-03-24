@@ -14,22 +14,9 @@ const campaignSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  rewardType: {
-    type: String,
-    enum: ['FIXED', 'PERCENTAGE'],
-    required: true
-  },
   rewardAmount: {
     type: Number,
     required: true,
-    min: 0
-  },
-  minRewardAmount: {
-    type: Number,
-    min: 0
-  },
-  maxRewardAmount: {
-    type: Number,
     min: 0
   },
   active: {
@@ -43,18 +30,17 @@ const campaignSchema = new mongoose.Schema({
   endDate: {
     type: Date
   },
-  referralCount: {
-    type: Number,
-    default: 0
+  landingPage: {    //save the url
+    type: String
   },
-  successfulReferrals: {
-    type: Number,
-    default: 0
-  },
-  totalRewardsGiven: {
-    type: Number,
-    default: 0
-  },
+  sentTo: [{  
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'  // ✅ Changed from 'Business' to 'User'
+  }],
+  completedCTA: [{  
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'  // ✅ Changed from 'Business' to 'User'
+  }],
   createdAt: {
     type: Date,
     default: Date.now
@@ -65,14 +51,16 @@ const campaignSchema = new mongoose.Schema({
   }
 });
 
-// Update the updatedAt timestamp before saving
+// Automatically update `updatedAt` before saving
 campaignSchema.pre('save', function(next) {
   this.updatedAt = new Date();
-  if (this.minRewardAmount && this.maxRewardAmount && 
-      this.minRewardAmount > this.maxRewardAmount) {
-    next(new Error('Minimum reward amount cannot be greater than maximum reward amount'));
-  }
   next();
 });
 
-module.exports = mongoose.model('Campaign', campaignSchema); 
+// Ensure `updatedAt` updates when using findOneAndUpdate
+campaignSchema.pre('findOneAndUpdate', function(next) {
+  this.set({ updatedAt: new Date() });
+  next();
+});
+
+module.exports = mongoose.model('Campaign', campaignSchema);

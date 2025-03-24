@@ -6,29 +6,27 @@ const referralSchema = new mongoose.Schema({
     ref: 'Campaign',
     required: true
   },
+  referrerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  referredUserId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
   referralCode: {
     type: String,
     required: true,
     unique: true
   },
-  referrerEmail: {
-    type: String,
-    required: true
+  completed: {
+    type: Date
   },
-  status: {
-    type: String,
-    enum: ['ACTIVE', 'EXPIRED'],
-    default: 'ACTIVE'
-  },
-  expiresAt: {
+  createdAt: {
     type: Date,
-    default: () => new Date(+new Date() + 30 * 24 * 60 * 60 * 1000) // 30 days from creation
+    default: Date.now
   }
 });
 
-// Add a method to check if referral is expired
-referralSchema.methods.isExpired = function() {
-  return this.expiresAt && this.expiresAt < new Date();
-};
-
-module.exports = mongoose.model('Referral', referralSchema); 
+module.exports = mongoose.model('Referral', referralSchema);

@@ -10,34 +10,39 @@ export const AuthProvider = ({ children }) => {
 
     const checkAuth = async () => {
         try {
-            const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/auth/check`, {
+            let response;
+
+            // First, check business authentication
+            response = await axios.get(`${import.meta.env.VITE_API_URL}/api/auth/check`, {
                 withCredentials: true,
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
             });
-
-            if (!response || !response.data) {
-                throw new Error('Invalid response from server');
-            }
-
-            if (!response.data.isAuthenticated) {
-                setUser(null);
-                setIsAuthenticated(false);
+            if (response.data.isAuthenticated) {
+                setIsAuthenticated(true);
+                setUser({ ...response.data.user, isBusiness: true });
+                localStorage.setItem("user", JSON.stringify({ ...response.data.user, isBusiness: true }));
                 return;
             }
 
-            setIsAuthenticated(response.data.isAuthenticated);
-            setUser(response.data.user);
+            // If business auth fails, check user authentication
+            response = await axios.get(`${import.meta.env.VITE_API_URL}/api/user/auth/check`, {
+                withCredentials: true,
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+            });
+
+            if (response.data.isAuthenticated) {
+                setIsAuthenticated(true);
+                setUser({ ...response.data.user, isBusiness: false });
+                localStorage.setItem("user", JSON.stringify({ ...response.data.user, isBusiness: false }));
+                return;
+            }
+
+            throw new Error('Not authenticated');
         } catch (error) {
             console.error('Auth check error:', error.message);
             setIsAuthenticated(false);
             setUser(null);
-            if (error.response?.status === 401) {
-                setUser(null);
-                setIsAuthenticated(false);
-            }
+            localStorage.removeItem("user");
         } finally {
             setLoading(false);
         }
@@ -45,38 +50,24 @@ export const AuthProvider = ({ children }) => {
 
     useEffect(() => {
         checkAuth();
-        // Set up interval to periodically check auth status
-        const interval = setInterval(checkAuth, 5 * 60 * 1000); // Check every 5 minutes
+        const interval = setInterval(checkAuth, 5 * 60 * 1000); // Check every 5 mins
         return () => clearInterval(interval);
     }, []);
 
     const logout = async () => {
         try {
-            await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {}, {
-                withCredentials: true
-            });
+            await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {}, { withCredentials: true });
             setUser(null);
             setIsAuthenticated(false);
             localStorage.clear();
             sessionStorage.clear();
         } catch (error) {
             console.error('Logout error:', error);
-            setUser(null);
-            setIsAuthenticated(false);
-            throw error;
         }
     };
 
-    const value = {
-        user,
-        isAuthenticated,
-        loading,
-        logout,
-        checkAuth
-    };
-
     return (
-        <AuthContext.Provider value={value}>
+        <AuthContext.Provider value={{ user, isAuthenticated, loading, logout, checkAuth }}>
             {children}
         </AuthContext.Provider>
     );
@@ -84,8 +75,6 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuth = () => {
     const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
+    if (!context) throw new Error('useAuth must be used within an AuthProvider');
     return context;
-}; 
+};

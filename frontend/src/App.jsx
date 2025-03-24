@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import PrivateRoute from './components/ProtectorRoute';
 import ReferralLanding from './pages/ReferralLanding';
+import UserDashboard from './pages/UserDashboard';
 
 function App() {
   return (
@@ -14,8 +15,16 @@ function App() {
         <Route
           path="/dashboard"
           element={
-            <PrivateRoute>
+            <PrivateRoute allowedRole={"business"}>
               <Dashboard />
+            </PrivateRoute >
+          }
+        />
+        <Route
+          path="/user-dashboard"
+          element={
+            <PrivateRoute allowedRole={"user"}>
+              <UserDashboard />
             </PrivateRoute>
           }
         />

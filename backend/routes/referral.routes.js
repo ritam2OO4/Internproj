@@ -1,206 +1,105 @@
-const router = require('express').Router();
+const express = require('express');
+const router = express.Router();
 const Referral = require('../models/referral.model');
 const Campaign = require('../models/campaign.model');
-const crypto = require('crypto');
-const authMiddleware = require('../middleware/auth.middleware');
 const ReferralCompletion = require('../models/referralCompletion.model');
+const User = require('../models/user.model'); // To check existing users
+const crypto = require('crypto');
 
-// Generate referral link - needs auth
-router.post('/generate/:campaignId', authMiddleware, async (req, res) => {
+// 📌 Step 1: Generate a Referral Link (Existing User Shares It)
+router.get('/generate/:campaignId', async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'User not authenticated' });
+    const campaign = await Campaign.findById(req.params.campaignId);
+    if (!campaign || !campaign.active) {
+      return res.status(400).json({ error: 'Invalid or inactive campaign' });
     }
 
-    const campaign = await Campaign.findOne({
-      _id: req.params.campaignId,
-      businessId: req.user._id
-    });
+    // Generate a unique referral code
+    const referralCode = crypto.randomBytes(6).toString('hex');
 
-    if (!campaign) {
-      return res.status(404).json({ error: 'Campaign not found' });
-    }
-
-    // Create a new referral with the referrer's email
+    // Save the referral entry
     const referral = await Referral.create({
       campaignId: campaign._id,
-      referralCode: crypto.randomBytes(6).toString('hex'),
-      referrerEmail: req.body.email  // Store the email of the person sharing the link
+      referralCode
     });
 
-    // Update campaign referral count
-    await Campaign.findByIdAndUpdate(campaign._id, {
-      $inc: { referralCount: 1 }
+    res.json({
+      message: 'Referral link generated!',
+      referralCode,
+      referralLink: `${process.env.FRONTEND_URL}/refer/${referralCode}`
     });
 
-    // Return the referral link that can be shared
-    res.status(201).json({
-      referralCode: referral.referralCode,
-      referralLink: `${process.env.FRONTEND_URL}/refer/${referral.referralCode}`
-    });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
 
-// Track referral completion - public route
-router.post('/complete/:referralCode', async (req, res) => {
+// 📌 Step 2: New User Completes Task (No Authentication Required)
+router.post('/refer/:referralCode', async (req, res) => {
   try {
-    const referral = await Referral.findOne({ 
-      referralCode: req.params.referralCode,
-      status: 'ACTIVE'
-    });
+    const { email, purchaseAmount } = req.body;
 
+    // Step 2.1: Ensure the user is NEW
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: 'User already exists. Referral not applicable.' });
+    }
+
+    // Step 2.2: Check if referral is valid
+    const referral = await Referral.findOne({ referralCode: req.params.referralCode });
     if (!referral) {
       return res.status(400).json({ error: 'Invalid referral code' });
     }
 
-    // Check if the referred email is already used in this campaign
-    const existingReferral = await ReferralCompletion.findOne({
-      campaignId: referral.campaignId,
-      referredEmail: req.body.email,
-    });
-
-    if (existingReferral) {
-      return res.status(400).json({ 
-        error: 'This email has already been used for this campaign' 
-      });
-    }
-
+    // Step 2.3: Ensure campaign exists and is active
     const campaign = await Campaign.findById(referral.campaignId);
-    if (!campaign) {
-      return res.status(404).json({ error: 'Campaign not found' });
+    if (!campaign || !campaign.active) {
+      return res.status(400).json({ error: 'Campaign is inactive' });
     }
 
-    if (!campaign.active) {
-      return res.status(400).json({ error: 'This campaign is no longer active' });
-    }
-
-    // Validate purchase amount
-    if (!req.body.purchaseAmount || req.body.purchaseAmount <= 0) {
+    // Step 2.4: Calculate the reward
+    const amount = parseFloat(purchaseAmount);
+    if (!amount || amount <= 0) {
       return res.status(400).json({ error: 'Invalid purchase amount' });
     }
 
-    // Calculate reward
-    const purchaseAmount = parseFloat(req.body.purchaseAmount);
-    let rewardAmount;
-    if (campaign.rewardType === 'FIXED') {
-      rewardAmount = campaign.rewardAmount;
-    } else {
-      // For percentage rewards - calculate percentage of purchase amount
-      rewardAmount = Number((purchaseAmount * (campaign.rewardAmount / 100)).toFixed(2));
-      console.log('Percentage calculation:', {
-        purchaseAmount,
-        percentage: campaign.rewardAmount,
-        calculation: `${purchaseAmount} * (${campaign.rewardAmount} / 100)`,
-        result: rewardAmount
-      });
-    }
+    let rewardAmount = campaign.rewardType === 'FIXED'
+      ? campaign.rewardAmount
+      : Math.min(Math.max(amount * (campaign.rewardAmount / 100), campaign.minRewardAmount || 0), campaign.maxRewardAmount || Infinity);
 
-    // Add validation for minimum and maximum rewards if needed
-    if (campaign.rewardType === 'PERCENTAGE') {
-      // Ensure reward amount is within bounds
-      if (campaign.maxRewardAmount && rewardAmount > campaign.maxRewardAmount) {
-        rewardAmount = Number(campaign.maxRewardAmount.toFixed(2));
-        console.log('Capped at max reward:', rewardAmount);
-      }
-      if (campaign.minRewardAmount && rewardAmount < campaign.minRewardAmount) {
-        rewardAmount = Number(campaign.minRewardAmount.toFixed(2));
-        console.log('Raised to min reward:', rewardAmount);
-      }
-    }
-
-    // Validate calculated reward
-    if (isNaN(rewardAmount) || rewardAmount < 0 || !isFinite(rewardAmount)) {
+    if (isNaN(rewardAmount) || rewardAmount < 0) {
       return res.status(400).json({ error: 'Invalid reward calculation' });
     }
 
-    // Create a completion record instead of a new referral
-    const completionRecord = new ReferralCompletion({
+    // Step 2.5: Store the referral completion
+    await ReferralCompletion.create({
       campaignId: referral.campaignId,
       referralCode: referral.referralCode,
       referrerEmail: referral.referrerEmail,
-      referredEmail: req.body.email,
-      purchaseAmount: purchaseAmount,
-      rewardAmount: rewardAmount,
+      referredEmail: email,
+      purchaseAmount: amount,
+      rewardAmount,
       completedAt: new Date()
     });
-    await completionRecord.save();
 
-    // Update campaign metrics
+    // Step 2.6: Mark referral as completed
+    referral.completed = true;
+    referral.referredEmail = email;
+    await referral.save();
+
+    // Step 2.7: Update campaign stats
     await Campaign.findByIdAndUpdate(campaign._id, {
-      $inc: { 
-        successfulReferrals: 1,
-        totalRewardsGiven: rewardAmount,
-        totalPurchaseAmount: purchaseAmount
-      }
+      $inc: { successfulReferrals: 1, totalRewardsGiven: rewardAmount, totalPurchaseAmount: amount }
     });
 
-    // Get updated campaign stats
-    const updatedCampaign = await Campaign.findById(campaign._id);
-    console.log('Updated campaign metrics:', {
-      successfulReferrals: updatedCampaign.successfulReferrals,
-      totalRewardsGiven: updatedCampaign.totalRewardsGiven,
-      totalPurchaseAmount: updatedCampaign.totalPurchaseAmount
+    res.json({
+      message: 'Referral successful! Both referrer and you are rewarded.',
+      rewardAmount
     });
 
-    res.json({ 
-      referral: completionRecord,
-      rewardAmount,
-      purchaseAmount,
-      calculationType: campaign.rewardType,
-      calculationDetails: {
-        rewardAmount: campaign.rewardAmount,
-        percentage: campaign.rewardType === 'PERCENTAGE' ? campaign.rewardAmount : null
-      }
-    });
-  } catch (error) {
-    console.error('Referral completion error:', error);
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// Get referral details - public route
-router.get('/details/:referralCode', async (req, res) => {
-  try {
-    const referral = await Referral.findOne({ 
-      referralCode: req.params.referralCode,
-      status: 'ACTIVE'
-    });
-
-    if (!referral) {
-      return res.status(404).json({ error: 'Invalid referral code' });
-    }
-
-    if (referral.isExpired()) {
-      referral.status = 'EXPIRED';
-      await referral.save();
-      return res.status(400).json({ error: 'This referral link has expired' });
-    }
-
-    const campaign = await Campaign.findOne({
-      _id: referral.campaignId,
-      active: true
-    });
-
-    if (!campaign) {
-      return res.status(404).json({ error: 'Campaign not found or inactive' });
-    }
-
-    // Get completion stats for this referral
-    const completions = await ReferralCompletion.countDocuments({
-      referralCode: referral.referralCode
-    });
-
-    res.json({ 
-      campaign, 
-      referral,
-      expiresAt: referral.expiresAt,
-      totalCompletions: completions
-    });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 });
 
-module.exports = router; 
+module.exports = router;

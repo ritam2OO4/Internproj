@@ -1,11 +1,9 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useState } from 'react';
 
-const PrivateRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
-  const [redirecting, setRedirecting] = useState(false);
-
+const PrivateRoute = ({ children, allowedRole }) => {
+  const { isAuthenticated, loading, user } = useAuth();
+// console.log(isAuthenticated,loading,user,allowedRole)
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
@@ -15,23 +13,18 @@ const PrivateRoute = ({ children }) => {
   }
 
   if (!isAuthenticated) {
-    if (!redirecting) {
-      setRedirecting(true);
-      console.log("redirecting")
-      setTimeout(() => {
-        console.log("2redirecting")
-        return <Navigate to="/" />;
-      }, 100);
-        console.log("redirecting")
-    }
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-900">
-        <div className="text-xl text-white">Redirecting to login...</div>
-      </div>
-    );
+    return <Navigate to="/" replace />;
+  }
+
+  // Validate if user is allowed to access this route
+  if (allowedRole === 'business' && !user?.isBusiness) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  if (allowedRole === 'user' && user?.isBusiness) {
+    return <Navigate to="/user-dashboard" replace />;
   }
 
   return children;
 };
 
-export default PrivateRoute; 
+export default PrivateRoute;

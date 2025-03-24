@@ -16,6 +16,15 @@ const businessSchema = new mongoose.Schema({
     unique: true
   },
   picture: String,
+  referrerId: {  // Tracks who invited this business
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Business',
+    default: null
+  },
+  campaignsParticipated: [{  // Tracks campaigns the business was part of
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Campaign'
+  }],
   createdAt: {
     type: Date,
     default: Date.now

@@ -9,7 +9,9 @@ const MongoStore = require('connect-mongo');
 const authRoutes = require('./routes/auth.routes');
 const campaignRoutes = require('./routes/campaign.routes');
 const referralRoutes = require('./routes/referral.routes');
+const authUser = require("./routes/auth.user.routes");
 const Business = require('./models/business.model');
+const User = require('./models/user.model'); // Import User model
 
 const app = express();
 
@@ -44,24 +46,32 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Import and configure passport
-require('./config/passport')(passport);
+// Import and configure passport strategies
+require('./config/passport')(passport);      // Business Google Auth
+require('./config/passportUser')(passport);  // User Google Auth
 
 // Passport serialization
 passport.serializeUser((user, done) => {
-  done(null, user.id);
+  done(null, { id: user.id, type: user instanceof Business ? 'business' : 'user' });
 });
 
-passport.deserializeUser(async (id, done) => {
+passport.deserializeUser(async (obj, done) => {
   try {
-    const user = await Business.findById(id);
+    let user;
+    if (obj.type === 'business') {
+      user = await Business.findById(obj.id);
+    } else {
+      user = await User.findById(obj.id);
+    }
     done(null, user);
   } catch (error) {
     done(error, null);
   }
 });
 
+
 // Routes
+app.use('/api/user/auth', authUser);
 app.use('/api/auth', authRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/referrals', referralRoutes);
@@ -74,4 +84,4 @@ mongoose.connect(process.env.MONGODB_URI)
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-}); 
+});

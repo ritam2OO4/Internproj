@@ -1,20 +1,20 @@
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const Business = require('../models/business.model');
+const User = require('../models/user.model');
 
 module.exports = (passport) => {
-  passport.use('google-business',  // 👈 Use a unique name for Business auth
+  passport.use('google-user',  // 👈 Use a unique name for User auth
     new GoogleStrategy(
       {
-        clientID: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: '/api/auth/google/callback',
+        clientID: process.env.GOOGLE_CLIENT_USERID,
+        clientSecret: process.env.GOOGLE_CLIENT_USERSECRET,
+        callbackURL: '/api/user/auth/google/callback',
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
-          let business = await Business.findOne({ googleId: profile.id });
+          let user = await User.findOne({ googleId: profile.id });
 
-          if (!business) {
-            business = await Business.create({
+          if (!user) {
+            user = await User.create({
               googleId: profile.id,
               name: profile.displayName,
               email: profile.emails[0].value,
@@ -22,7 +22,7 @@ module.exports = (passport) => {
             });
           }
 
-          return done(null, business);
+          return done(null, user);
         } catch (error) {
           return done(error, null);
         }
