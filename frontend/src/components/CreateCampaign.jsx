@@ -1,146 +1,102 @@
-import { useState } from "react";
-import axios from "axios";
+import { useState } from 'react';
+import axios from 'axios';
 
-const CreateCampaign = ({ onSuccess }) => {
-  const [campaign, setCampaign] = useState({
-    name: "",
-    description: "",
-    rewardType: "FIXED",
-    rewardAmount: 0,
-    startDate: new Date().toISOString().split("T")[0],
-    endDate: "",
-    active: true,
+const CreateCampaignWithAI = ({ onSuccess }) => {
+  const [userCommand, setUserCommand] = useState('');
+  const [campaignData, setCampaignData] = useState({
+    name: '',
+    description: '',
+    rewardAmount: '',
+    landingPage: '',
   });
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (campaign.rewardAmount < 0) {
-      alert("Reward amount cannot be negative");
-      return;
-    }
-
-    if (campaign.rewardType === 'PERCENTAGE' && campaign.rewardAmount > 100) {
-      alert("Percentage reward cannot exceed 100%");
-      return;
-    }
-
+  const handleGenerateCampaign = async () => {
+    console.log(userCommand)
+    if (!userCommand) return alert('Please enter a campaign idea.');
+    setLoading(true);
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/campaigns`, campaign, {
-        withCredentials: true,
-      });
-      if (onSuccess) onSuccess();
-      alert("Campaign created successfully!");
-      setCampaign({
-        name: "",
-        description: "",
-        rewardType: "FIXED",
-        rewardAmount: 0,
-        startDate: new Date().toISOString().split("T")[0],
-        endDate: "",
-        active: true,
-      });
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/api/ai/generate-campaign`,
+        { userInput: userCommand },
+        { withCredentials: true } // ✅ Ensures cookies are included
+      );
+      onSuccess();
+      console.log(response, response.data)
+      setCampaignData(response.data); // ✅ Update form with AI-generated campaign details
     } catch (error) {
-      alert(error.response?.data?.error || "Error creating campaign.");
+      console.error('Error extracting campaign details:', error);
     }
+    setLoading(false);
+  };
+
+  const handleSubmit = async () => {
+    if (!campaignData.name || !campaignData.description || !campaignData.rewardAmount) {
+      alert('Please fill in all fields.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await axios.post(`${import.meta.env.VITE_API_URL}/api/campaigns/create`, campaignData);
+      onSuccess();
+    } catch (error) {
+      console.error('Error creating campaign:', error);
+    }
+    setLoading(false);
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-950 p-4">
-      <div className="w-full max-w-3xl bg-gray-900 text-white shadow-lg rounded-xl p-6">
-        <h2 className="text-2xl font-bold text-center text-blue-400">Create New Campaign</h2>
+    <div className="bg-white p-6 rounded-lg shadow-md">
+      <h2 className="text-xl font-bold mb-4">Create Campaign with help of AI</h2>
 
-        <form onSubmit={handleSubmit} className="space-y-6 mt-4">
-          <div>
-            <label className="block text-sm font-medium">Campaign Name</label>
-            <input
-              type="text"
-              value={campaign.name}
-              onChange={(e) => setCampaign({ ...campaign, name: e.target.value })}
-              className="mt-1 w-full p-2 rounded-md bg-gray-800 border border-gray-700 text-white"
-              placeholder="Enter campaign name"
-              required
-            />
-          </div>
+      <textarea
+        placeholder="Describe your campaign (e.g., 'My campaign is Summer Sale, buy 1 get 2 free, win coupon upto 4000')"
+        value={userCommand}
+        onChange={(e) => setUserCommand(e.target.value)}
+        className="w-full p-2 border rounded mb-2"
+      />
 
-          <div>
-            <label className="block text-sm font-medium">Description</label>
-            <textarea
-              value={campaign.description}
-              onChange={(e) => setCampaign({ ...campaign, description: e.target.value })}
-              className="mt-1 w-full p-2 rounded-md bg-gray-800 border border-gray-700 text-white"
-              placeholder="Briefly describe your campaign"
-              rows="3"
-            />
-          </div>
+      <button
+        onClick={handleGenerateCampaign}
+        disabled={loading}
+        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition mb-4"
+      >
+        {loading ? 'Generating...' : 'Generate Campaign'}
+      </button>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium">Reward Type</label>
-              <select
-                value={campaign.rewardType}
-                onChange={(e) => setCampaign({ ...campaign, rewardType: e.target.value })}
-                className="mt-1 w-full p-2 rounded-md bg-gray-800 border border-gray-700 text-white"
-              >
-                <option value="FIXED">Fixed Amount</option>
-                <option value="PERCENTAGE">Percentage</option>
-              </select>
-            </div>
+      {campaignData.name && (
+        <>
+          <input
+            type="text"
+            placeholder="Campaign Name"
+            value={campaignData.name}
+            readOnly
+            className="w-full p-2 border rounded mb-2 bg-gray-100"
+          />
+          <textarea
+            placeholder="Campaign Description"
+            value={campaignData.description}
+            readOnly
+            className="w-full p-2 border rounded mb-2 bg-gray-100"
+          />
+          <input
+            type="number"
+            placeholder="Reward Amount"
+            value={campaignData.rewardAmount}
+            readOnly
+            className="w-full p-2 border rounded mb-2 bg-gray-100"
+          />
+        </>
+      )}
 
-            <div>
-              <label className="block text-sm font-medium">Reward Amount</label>
-              <input
-                type="number"
-                value={campaign.rewardAmount}
-                onChange={(e) => setCampaign({ ...campaign, rewardAmount: Number(e.target.value) })}
-                className="mt-1 w-full p-2 rounded-md bg-gray-800 border border-gray-700 text-white"
-                min="0"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium">Start Date</label>
-              <input
-                type="date"
-                value={campaign.startDate}
-                onChange={(e) => setCampaign({ ...campaign, startDate: e.target.value })}
-                className="mt-1 w-full p-2 rounded-md bg-gray-800 border border-gray-700 text-white"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium">End Date</label>
-              <input
-                type="date"
-                value={campaign.endDate}
-                onChange={(e) => setCampaign({ ...campaign, endDate: e.target.value })}
-                className="mt-1 w-full p-2 rounded-md bg-gray-800 border border-gray-700 text-white"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={campaign.active}
-              onChange={(e) => setCampaign({ ...campaign, active: e.target.checked })}
-              className="w-4 h-4"
-            />
-            <label className="text-sm font-medium">Active Campaign</label>
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-blue-500 hover:bg-blue-600 transition p-2 rounded-md text-white"
-          >
-            Create Campaign
-          </button>
-        </form>
-      </div>
+      <button
+        onClick={handleSubmit}
+        disabled={loading || !campaignData.name}
+        className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition"
+      >
+        {loading ? 'Creating...' : 'Create Campaign'}
+      </button>
     </div>
   );
 };
 
-export default CreateCampaign;
+export default CreateCampaignWithAI;

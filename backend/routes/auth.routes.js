@@ -31,7 +31,6 @@ router.get('/google/callback',
       path: '/',
       maxAge: 24 * 60 * 60 * 1000 // 24 hours
     });
-
     // Set session cookie
     req.session.save((err) => {
       if (err) {

@@ -24,7 +24,7 @@ const CampaignList = () => {
     const fetchCampaigns = async () => {
         try {
             setError(null);
-            const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/campaigns/campaignsList`, {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/campaigns`, {
                 withCredentials: true
             });
             if (!Array.isArray(response.data)) {

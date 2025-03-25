@@ -35,7 +35,7 @@ const Dashboard = () => {
         onClick={() => setShowCreateForm(prev => !prev)}
         className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
       >
-        {showCreateForm ? 'Close Form' : 'Create Campaign'}
+        {showCreateForm ? 'Close Form' : 'Create Campaign With AI!!'}
       </button>
 
       {showCreateForm && <CreateCampaign onSuccess={() => { setShowCreateForm(false); setRefreshKey(prev => prev + 1); }} />}
