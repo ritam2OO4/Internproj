@@ -12,7 +12,6 @@ const CreateCampaignWithAI = ({ onSuccess }) => {
   const [loading, setLoading] = useState(false);
 
   const handleGenerateCampaign = async () => {
-    console.log(userCommand)
     if (!userCommand) return alert('Please enter a campaign idea.');
     setLoading(true);
     try {
@@ -21,7 +20,6 @@ const CreateCampaignWithAI = ({ onSuccess }) => {
         { withCredentials: true } // ✅ Ensures cookies are included
       );
       onSuccess();
-      console.log(response, response.data)
       setCampaignData(response.data); // ✅ Update form with AI-generated campaign details
     } catch (error) {
       console.error('Error extracting campaign details:', error);

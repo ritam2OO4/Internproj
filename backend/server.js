@@ -10,6 +10,8 @@ const authRoutes = require('./routes/auth.routes');
 const campaignRoutes = require('./routes/campaign.routes');
 const referralRoutes = require('./routes/referral.routes');
 const AiRoutes = require('./routes/ai.routes');
+const AiMailRoutes = require("./routes/AiMailRoutes")
+const newUserRoutes = require("./routes/newUserRoutes")
 const authUser = require("./routes/auth.user.routes");
 const Business = require('./models/business.model');
 const User = require('./models/user.model'); // Import User model
@@ -77,6 +79,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/ai', AiRoutes);
+app.use('/api', AiMailRoutes);
+app.use('/api/newUser', newUserRoutes);
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI)

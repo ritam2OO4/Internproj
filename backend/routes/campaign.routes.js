@@ -20,7 +20,7 @@ router.post('/', async (req, res) => {
 });
 
 // 📌 Get All Campaigns
-router.get('/', async (req, res) => {
+router.post('/data', async (req, res) => {
   try {
     const campaigns = await Campaign.find({ businessId: req.user._id });
     res.json(campaigns);

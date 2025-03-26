@@ -7,5 +7,5 @@ router.use(authMiddleware)
 
 router.post("/generate-campaign", aiController.getReview)
 
-
+router.post("/generate-draft",aiController.getMail)
 module.exports = router;    

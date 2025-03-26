@@ -42,7 +42,6 @@ router.get('/google/callback',
         console.error('Session not properly set');
         return res.redirect('/');
       }
-      console.log(req.session.passport)
       res.redirect(process.env.FRONTEND_URL + '/dashboard');
     });
   }

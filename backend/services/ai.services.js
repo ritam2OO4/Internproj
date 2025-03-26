@@ -67,3 +67,4 @@ async function generateContent(userInput) {
 }
 
 module.exports = generateContent;
+
