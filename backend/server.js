@@ -92,9 +92,14 @@ app.use("/api", TakeTaskRoutes);
 
 
 // MongoDB connection
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('MongoDB connection error:', err));
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  tls: true,  // Enable TLS (Required for Atlas)
+  serverSelectionTimeoutMS: 5000, // Timeout after 5s
+})
+  .then(() => console.log('✅ Connected to MongoDB'))
+  .catch(err => console.error('❌ MongoDB connection error:', err));
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
