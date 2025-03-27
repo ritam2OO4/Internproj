@@ -19,10 +19,10 @@ console.log(userDetails)
   // Ensure user exists before checking roles
   if (userDetails) {
     if (allowedRole === "business" && !userDetails.isBusiness) {
-      return <Navigate to="/user-dashboard" replace />;
+      return <Navigate to="user-dashboard" replace />;
     }
     if (allowedRole === "user" && userDetails.isBusiness) {
-      return <Navigate to="/dashboard" replace />;
+      return <Navigate to="dashboard" replace />;
     }
   }
 
