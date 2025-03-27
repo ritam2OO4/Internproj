@@ -42,7 +42,7 @@ router.get('/google/callback',
         console.error('Session not properly set');
         return res.redirect('/');
       }
-      res.redirect(process.env.FRONTEND_URL + '/dashboard');
+      res.redirect(process.env.FRONTEND_URL + 'dashboard');
     });
   }
 );
