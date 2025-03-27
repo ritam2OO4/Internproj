@@ -6,8 +6,9 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import { RefreshCcw, Sparkles, Mail } from "lucide-react";
 import emailjs from "@emailjs/browser";
-
 const CampaignList = () => {
+    const { user } = useAuth(); // Get user data, including business name
+    const businessUser = user;
     const [campaigns, setCampaigns] = useState([]);
     const [users, setUsers] = useState([]); // Store users' email data
     const [error, setError] = useState(null);
@@ -90,15 +91,28 @@ const CampaignList = () => {
         const publicKey = import.meta.env.VITE_PUBLIC_KEY;
 
         try {
-            // Create an array of email sending promises
-            const emailPromises = users.map((user) => {
-                const emailParams = {
-                    user_name: user.name,
-                    user_email: user.email,
-                    subject: selectedEmail.subject,
-                    message: selectedEmail.body.replace("[Friend's Name]", user.name),
-                };
+            // Filter users to ensure only valid emails are included
+            const validUsers = users.filter(user => user.email && user.email.trim() !== "");
 
+            if (validUsers.length === 0) {
+                alert("No valid email addresses found.");
+                return;
+            }
+            console.log(user.name)
+            const emailBody = selectedEmail.body
+                .replace("[Friend's Name]", user.name || "Friend")
+                .replace("[Your Name]", businessUser)
+                .replace("[Your Company Name]", businessUser.Name + "'s Company");
+            // Create an array of email sending promises
+            const emailPromises = validUsers.map((user) => {
+                const emailParams = {
+                    from_name: businessUser.name || "Your Business",  // Add business name
+                    user_name: user.name || "User",
+                    reply_to: user.email, // Ensure email is not empty
+                    subject: selectedEmail.subject,
+                    message: emailBody
+                };
+                console.log(emailParams)
                 return emailjs.send(serviceId, templateId, emailParams, publicKey);
             });
 
@@ -111,6 +125,7 @@ const CampaignList = () => {
             alert("❌ Some emails failed to send. Check the console for details.");
         }
     };
+
 
 
     if (loading) return <Skeleton className="h-16 w-full" />;

@@ -16,14 +16,20 @@ export const UserProvider = ({ children }) => {
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/api/user/auth/check`, {
                 withCredentials: true
             });
-
+    
             if (response.data?.isAuthenticated) {
                 setUserDetails(response.data.user);
                 setIsAuthenticated(true);
+    
+                // Store user details and token in localStorage
                 localStorage.setItem("userDetails", JSON.stringify(response.data.user));
+                if (response.data.token) {
+                    localStorage.setItem("authToken", response.data.token);
+                }
             } else {
                 console.warn("User not authenticated.");
                 setIsAuthenticated(false);
+                localStorage.removeItem("authToken");
             }
         } catch (error) {
             console.error("Error fetching user details:", error);
@@ -31,7 +37,8 @@ export const UserProvider = ({ children }) => {
             setLoading(false);
         }
     };
-
+    
+    
     // Function to update user details dynamically
     const updateUserDetails = (data) => {
         setUserDetails((prevDetails) => {

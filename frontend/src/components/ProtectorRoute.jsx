@@ -3,7 +3,6 @@ import { useAuth } from "../contexts/AuthContext";
 
 const PrivateRoute = ({ children, allowedRole }) => {
   const { isAuthenticated, loading, user } = useAuth();
-console.log(user,allowedRole)
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
