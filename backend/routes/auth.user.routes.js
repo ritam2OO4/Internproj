@@ -35,7 +35,7 @@ router.get('/google/callback',
         console.error('Session save error:', err);
         return res.redirect('/');
       }
-      res.redirect(process.env.FRONTEND_URL + '/user-dashboard');
+      res.redirect(process.env.FRONTEND_URL + 'user-dashboard');
     });
   }
 );
