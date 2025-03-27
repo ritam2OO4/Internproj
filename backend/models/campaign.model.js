@@ -37,9 +37,8 @@ const campaignSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'  // ✅ Changed from 'Business' to 'User'
   }],
-  completedCTA: [{  
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'  // ✅ Changed from 'Business' to 'User'
+  completedCTA: [{
+   type:Array   // ✅ Changed from 'Business' to 'User'
   }],
   createdAt: {
     type: Date,

@@ -23,7 +23,6 @@ router.get('/google/callback',
       process.env.JWT_SECRET,
       { expiresIn: '1d' }
     );
-
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -31,7 +30,6 @@ router.get('/google/callback',
       path: '/',
       maxAge: 24 * 60 * 60 * 1000 // 24 hours
     });
-
     req.session.save((err) => {
       if (err) {
         console.error('Session save error:', err);

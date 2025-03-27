@@ -8,36 +8,38 @@ export const AuthProvider = ({ children }) => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [loading, setLoading] = useState(true);
 
+    // Function to check authentication status
     const checkAuth = async () => {
         try {
-            let response;
+            let userData = null;
 
-            // First, check business authentication
-            response = await axios.get(`${import.meta.env.VITE_API_URL}/api/auth/check`, {
-                withCredentials: true,
-                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
-            });
-            if (response.data.isAuthenticated) {
-                setIsAuthenticated(true);
-                setUser({ ...response.data.user, isBusiness: true });
-                localStorage.setItem("user", JSON.stringify({ ...response.data.user, isBusiness: true }));
-                return;
-            }
-
-            // If business auth fails, check user authentication
-            response = await axios.get(`${import.meta.env.VITE_API_URL}/api/user/auth/check`, {
+            // Check business authentication first
+            const businessAuth = await axios.get(`${import.meta.env.VITE_API_URL}/api/auth/check`, {
                 withCredentials: true,
                 headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
             });
 
-            if (response.data.isAuthenticated) {
-                setIsAuthenticated(true);
-                setUser({ ...response.data.user, isBusiness: false });
-                localStorage.setItem("user", JSON.stringify({ ...response.data.user, isBusiness: false }));
-                return;
+            if (businessAuth.data.isAuthenticated) {
+                userData = { ...businessAuth.data.user, isBusiness: true };
+            } else {
+                // If business auth fails, check user authentication
+                const userAuth = await axios.get(`${import.meta.env.VITE_API_URL}/api/user/auth/check`, {
+                    withCredentials: true,
+                    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' }
+                });
+
+                if (userAuth.data.isAuthenticated) {
+                    userData = { ...userAuth.data.user, isBusiness: false };
+                }
             }
 
-            throw new Error('Not authenticated');
+            if (userData) {
+                setIsAuthenticated(true);
+                setUser(userData);
+                localStorage.setItem("user", JSON.stringify(userData));
+            } else {
+                throw new Error('Not authenticated');
+            }
         } catch (error) {
             console.error('Auth check error:', error.message);
             setIsAuthenticated(false);
@@ -48,15 +50,11 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    useEffect(() => {
-        checkAuth();
-        const interval = setInterval(checkAuth, 5 * 60 * 1000); // Check every 5 mins
-        return () => clearInterval(interval);
-    }, []);
-
+    // Logout function
     const logout = async () => {
         try {
             await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/logout`, {}, { withCredentials: true });
+
             setUser(null);
             setIsAuthenticated(false);
             localStorage.clear();
@@ -65,6 +63,24 @@ export const AuthProvider = ({ children }) => {
             console.error('Logout error:', error);
         }
     };
+
+    useEffect(() => {
+        checkAuth();
+        const interval = setInterval(checkAuth, 5 * 60 * 1000); // Check auth every 5 minutes
+
+        // Detect if the user manually clears localStorage and logout
+        const storageListener = () => {
+            if (!localStorage.getItem("user")) {
+                logout();  // If the user key is removed, force logout
+            }
+        };
+        window.addEventListener("storage", storageListener);
+
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener("storage", storageListener);
+        };
+    }, []);
 
     return (
         <AuthContext.Provider value={{ user, isAuthenticated, loading, logout, checkAuth }}>

@@ -1,9 +1,9 @@
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { useUser } from "../contexts/userContext"; // ✅ Correct Import
 
 const PrivateRoute = ({ children, allowedRole }) => {
-  const { isAuthenticated, loading, user } = useAuth();
-console.log(user,allowedRole)
+  const { userDetails, isAuthenticated, loading } = useUser(); // ✅ Use context
+console.log(userDetails)
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
@@ -17,11 +17,11 @@ console.log(user,allowedRole)
   }
 
   // Ensure user exists before checking roles
-  if (user) {
-    if (allowedRole === "business" && !user.isBusiness) {
+  if (userDetails) {
+    if (allowedRole === "business" && !userDetails.isBusiness) {
       return <Navigate to="/user-dashboard" replace />;
     }
-    if (allowedRole === "user" && user.isBusiness) {
+    if (allowedRole === "user" && userDetails.isBusiness) {
       return <Navigate to="/dashboard" replace />;
     }
   }

@@ -19,7 +19,11 @@ const userSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
-  }
+  },
+  rewardAmount: {
+    type: Number,
+    min: 0
+  },
 });
 
 module.exports = mongoose.model('User', userSchema);

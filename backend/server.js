@@ -13,7 +13,11 @@ const AiRoutes = require('./routes/ai.routes');
 const AiMailRoutes = require("./routes/AiMailRoutes")
 const newUserRoutes = require("./routes/newUserRoutes")
 const authUser = require("./routes/auth.user.routes");
+const taskRoutes = require("./routes/taskRoutes");
 const Business = require('./models/business.model');
+const chatbotRoutes = require("./routes/chatbotRoute");
+const AIBotRoutes = require("./routes/AIbot");
+const TakeTaskRoutes = require("./routes/TakeTaskRoutes");
 const User = require('./models/user.model'); // Import User model
 
 const app = express();
@@ -81,6 +85,11 @@ app.use('/api/referrals', referralRoutes);
 app.use('/api/ai', AiRoutes);
 app.use('/api', AiMailRoutes);
 app.use('/api/newUser', newUserRoutes);
+app.use("/api/task", taskRoutes);
+app.use("/api/chatbot", chatbotRoutes);
+app.use("/api/bot", AIBotRoutes);
+app.use("/api", TakeTaskRoutes);
+
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI)
