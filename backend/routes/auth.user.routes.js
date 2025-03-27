@@ -105,19 +105,33 @@ router.post('/logout', (req, res) => {
     if (err) {
       return res.status(500).json({ error: 'Error logging out' });
     }
+
+    // Clear authentication token
     res.clearCookie('token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/'
     });
+
+    // Remove the token from session or user object
+    if (req.user) {
+      req.user.token = null; 
+    }
+    if (req.session) {
+      req.session.token = null;
+    }
+
+    // Destroy session
     req.session.destroy((err) => {
       if (err) {
         console.error('Session destruction error:', err);
+        return res.status(500).json({ error: 'Error clearing session' });
       }
       res.json({ message: 'Logged out successfully' });
     });
   });
 });
+
 
 module.exports = router;
