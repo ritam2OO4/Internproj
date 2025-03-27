@@ -1,3 +1,4 @@
+
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/user.model');
 
@@ -7,7 +8,8 @@ module.exports = (passport) => {
       {
         clientID: process.env.GOOGLE_CLIENT_USERID,
         clientSecret: process.env.GOOGLE_CLIENT_USERSECRET,
-        callbackURL: 'https://internprojbackend.onrender.com/api/user/auth/google/callback',
+        // callbackURL: 'https://internprojbackend.onrender.com/api/user/auth/google/callback',
+        callbackURL: '/api/user/auth/google/callback',
       },
       async (accessToken, refreshToken, profile, done) => {
         try {

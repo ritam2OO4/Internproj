@@ -48,7 +48,6 @@ module.exports.getReview = async (req, res) => {
     }
 
     const response = await aiService(userInput);
-    console.log(response)
     const { name, description, rewardAmount, active, startDate, endDate } = response;
     const campaign = await campaignModel.create({
         businessId: req.user._id,
