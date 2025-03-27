@@ -13,10 +13,10 @@ const Login = () => {
       // Redirect based on the last selected login type
       if (loginType === 'business') {
       console.log("dashboard")
-      navigate('dashboard');
+      navigate('/dashboard');
     } else if (loginType === 'user') {
         console.log("user-dashboard")
-        navigate('user-dashboard');
+        navigate('/user-dashboard');
       }
     }
   }, [isAuthenticated, loading, loginType, navigate]);

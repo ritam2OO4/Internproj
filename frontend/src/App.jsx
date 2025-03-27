@@ -21,7 +21,7 @@ function App() {
 
           {/* Protected Routes */}
           <Route
-            path="dashboard"
+            path="/dashboard"
             element={
               <PrivateRoute allowedRole="business">
                 <Dashboard />
@@ -29,7 +29,7 @@ function App() {
             }
           />
           <Route
-            path="user-dashboard"
+            path="/user-dashboard"
             element={
               <PrivateRoute2 allowedRole="user">
                 <UserDashboard />
