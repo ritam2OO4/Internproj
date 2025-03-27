@@ -37,7 +37,7 @@ const Login = () => {
       type === 'business'
         ? `${import.meta.env.VITE_API_URL}/api/auth/google`
         : `${import.meta.env.VITE_API_URL}/api/user/auth/google`;
-
+console.log(apiUrl)
     window.location.href = apiUrl;
   };
 
