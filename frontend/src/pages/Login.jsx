@@ -12,9 +12,9 @@ const Login = () => {
     if (isAuthenticated && !loading) {
       // Redirect based on the last selected login type
       if (loginType === 'business') {
-        navigate('/dashboard');
+        navigate('dashboard');
       } else if (loginType === 'user') {
-        navigate('/user-dashboard');
+        navigate('user-dashboard');
       }
     }
   }, [isAuthenticated, loading, loginType, navigate]);
